@@ -5,9 +5,9 @@ package academy.javapro;
  * Features overdraft protection and transaction fees.
  */
 public class CheckingAccount extends Account {
-    private final double overdraftLimit;
+    private double overdraftLimit;
     private static final double TRANSACTION_FEE = 1.5; // Fee per withdrawal
-
+    
     /**
      * Constructor for creating a new checking account.
      *
@@ -27,7 +27,7 @@ public class CheckingAccount extends Account {
      * @return The overdraft limit
      */
     public double getOverdraftLimit() {
-        throw new UnsupportedOperationException("Method not implemented");
+        return overdraftLimit;
     }
 
     /**
@@ -36,7 +36,12 @@ public class CheckingAccount extends Account {
      * @param overdraftLimit The new overdraft limit
      */
     public void setOverdraftLimit(double overdraftLimit) {
-        throw new UnsupportedOperationException("Method not implemented");
+        if (overdraftLimit < 0) {
+            throw new IllegalArgumentException("Overdraft limit cannot be negative.");
+        }
+        this.overdraftLimit = overdraftLimit;
+        
+        System.out.printf("Overdraft limit updated to $%.2f%n", overdraftLimit);
     }
 
     /**
@@ -45,7 +50,38 @@ public class CheckingAccount extends Account {
      */
     @Override
     public void withdraw(double amount) {
-        throw new UnsupportedOperationException("Method not implemented");
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Withdrawal amount must be positive.");
+        }
+
+        double transactionFee = 1.50;
+
+        if (amount <= getBalance()) {
+            // Sufficient balance, deduct amount and fee
+            setBalance(getBalance() - amount);
+            setBalance(getBalance() - transactionFee);
+
+            logTransaction("WITHDRAWAL", amount); // Log the withdrawal transaction
+            logTransaction("FEE", transactionFee); // Log the fee transaction
+
+            System.out.printf("Withdrew $%.2f from checking account%n", amount);
+            System.out.printf("Transaction fee: $%.2f%n", transactionFee);
+        } else if (amount <= getBalance() + overdraftLimit) {
+            // Use overdraft protection
+            double overdraftUsed = amount - getBalance();
+            setBalance(-overdraftUsed); // Set balance to negative (overdraft)
+            setBalance(getBalance() - transactionFee); // Deduct transaction fee
+
+            logTransaction("WITHDRAWAL", amount); // Log the withdrawal transaction
+            logTransaction("FEE", transactionFee); // Log the fee transaction
+
+            System.out.printf("Withdrew $%.2f from checking account%n", amount);
+            System.out.printf("Transaction fee: $%.2f%n", transactionFee);
+            System.out.printf("Account is in overdraft. Current balance: $%.2f%n", getBalance());
+        } else {
+            // Exceeds overdraft limit
+            throw new IllegalArgumentException("Insufficient funds, including overdraft protection.");
+        }
     }
 
     /**
